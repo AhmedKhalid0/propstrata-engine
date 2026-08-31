@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"PropStrata | Enterprise Open-Source PropTech Engine" }}</title>
+    
+    <!-- Google Fonts: Inter & Outfit & Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Main Style CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="site-wrapper">
+        <!-- Top Navbar -->
+        <header class="main-header">
+            <div class="header-container">
+                <div class="brand-area">
+                    <a href="{% url 'properties:home' %}" class="brand-logo">
+                        <div class="logo-gem">🏢</div>
+                        <div class="logo-text">
+                            <span class="logo-title">PropStrata</span>
+                            <span class="logo-badge">PropTech Engine</span>
+                        </div>
+                    </a>
+                </div>
+
+                <nav class="nav-links">
+                    <a href="{% url 'properties:list' %}?purpose=RENT" class="nav-link">Rent</a>
+                    <a href="{% url 'properties:list' %}?purpose=BUY" class="nav-link">Buy</a>
+                    <a href="{% url 'properties:list' %}?purpose=COMMERCIAL" class="nav-link">Commercial</a>
+                    <a href="{% url 'agencies:list' %}" class="nav-link">Agencies</a>
+                    <a href="/api/v1/" target="_blank" class="nav-link text-emerald">Mobile API ↗</a>
+                </nav>
+
+                <div class="header-actions">
+                    <div class="lang-pill" id="lang-toggle" onclick="toggleLanguage()">
+                        <span class="lang-flag">🌐</span>
+                        <span id="lang-label">العربية (RTL)</span>
+                    </div>
+                    <a href="{% url 'properties:add' %}" class="btn btn-primary btn-sm">
+                        <span>+ List Property</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Block -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="footer-container">
+                <div class="footer-col brand-col">
+                    <div class="brand-logo">
+                        <div class="logo-gem">🏢</div>
+                        <span class="logo-title">PropStrata</span>
+                    </div>
+                    <p class="footer-desc">
+                        Enterprise open-source Real Estate Marketplace and PropTech engine engineered with Django 5, Geo-Spatial Search, and Mobile REST APIs.
+                    </p>
+                    <div class="footer-meta">
+                        <span>MIT Licensed Open-Source Platform</span>
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Discovery</h4>
+                    <ul>
+                        <li><a href="{% url 'properties:list' %}?purpose=RENT">Properties for Rent</a></li>
+                        <li><a href="{% url 'properties:list' %}?purpose=BUY">Properties for Sale</a></li>
+                        <li><a href="{% url 'properties:list' %}?purpose=COMMERCIAL">Commercial Real Estate</a></li>
+                        <li><a href="{% url 'agencies:list' %}">Verified Agencies Directory</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Developers & API</h4>
+                    <ul>
+                        <li><a href="/api/v1/health/">REST API Telemetry</a></li>
+                        <li><a href="/api/v1/properties/">Mobile Listings Endpoint</a></li>
+                        <li><a href="/api/v1/properties/map/">GeoJSON Map Pins</a></li>
+                        <li><a href="https://github.com/AhmedKhalid0/propstrata-engine" target="_blank">GitHub Repository ↗</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Regional Coverage</h4>
+                    <p class="text-dim text-sm">
+                        Optimized for Kuwait (KWD), Saudi Arabia (SAR), UAE (AED), Qatar (QAR), and Bahrain (BHD).
+                    </p>
+                    <div class="currency-badges">
+                        <span class="curr-badge">🇰🇼 KWD</span>
+                        <span class="curr-badge">🇸🇦 SAR</span>
+                        <span class="curr-badge">🇦🇪 AED</span>
+                        <span class="curr-badge">🇶🇦 QAR</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="bottom-container">
+                    <p>© 2026 <strong>PropStrata-Engine</strong>. Built by <a href="https://ahmedalgendy.com" target="_blank">Ahmed Khaled (Ahmed Algendy)</a>.</p>
+                    <p class="text-dim">Open-Source PropTech Infrastructure for Brokers, Landlords & Seekers.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="/static/js/app.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

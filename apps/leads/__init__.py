@@ -1,0 +1,1 @@
+"""Leads and Inquiries app."""

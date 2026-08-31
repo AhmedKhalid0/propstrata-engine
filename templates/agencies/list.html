@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section-container">
+    <div class="section-header">
+        <div>
+            <h1 class="section-title">Verified Real Estate Agencies & Brokers</h1>
+            <p class="section-sub">Licensed property companies, developers, and certified consultants across the GCC</p>
+        </div>
+    </div>
+
+    <div class="agencies-grid">
+        {% for agency in agencies %}
+        <div class="agency-card">
+            <div class="agency-card-top">
+                <img src="{{ agency.logo_url }}" alt="{{ agency.name_en }}" class="agency-logo-large">
+                <div class="agency-header-info">
+                    <span class="badge badge-tier">⭐ {{ agency.rating }} Verified</span>
+                    <h3 class="agency-title">
+                        <a href="{% url 'agencies:detail' agency.slug %}">{{ agency.name_en }}</a>
+                    </h3>
+                    <p class="agency-title-ar">{{ agency.name_ar }}</p>
+                    <span class="agency-license">License: {{ agency.license_no|default:"#REG-2026" }}</span>
+                </div>
+            </div>
+
+            <p class="agency-description">
+                {{ agency.description_en|truncatewords:25|default:"Professional real estate brokerage providing premium residential and commercial advisory services." }}
+            </p>
+
+            <div class="agency-stats-row">
+                <div class="ag-stat">
+                    <strong>{{ agency.properties.count }}</strong>
+                    <span>Listings</span>
+                </div>
+                <div class="ag-stat">
+                    <strong>{{ agency.agents.count }}</strong>
+                    <span>Agents</span>
+                </div>
+                <div class="ag-stat">
+                    <strong>99%</strong>
+                    <span>Response Rate</span>
+                </div>
+            </div>
+
+            <div class="agency-card-actions">
+                <a href="https://wa.me/{{ agency.whatsapp|cut:'+'|cut:' '|cut:'-' }}" target="_blank" class="btn btn-whatsapp btn-sm flex-1">
+                    <span>💬 WhatsApp</span>
+                </a>
+                <a href="{% url 'agencies:detail' agency.slug %}" class="btn btn-outline btn-sm flex-1">
+                    <span>View Portfolio →</span>
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No agencies found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

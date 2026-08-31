@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="wizard-page-container">
+    <div class="wizard-card">
+        <div class="wizard-header">
+            <span class="badge badge-tier">Self-Service Listing Wizard</span>
+            <h2>List Your Real Estate Property</h2>
+            <p class="text-dim text-sm">Publish your residential or commercial listing instantly across the PropStrata network.</p>
+        </div>
+
+        <form method="POST" action="{% url 'properties:add' %}" class="wizard-form" id="wizard-form">
+            {% csrf_token %}
+
+            <!-- Step 1: Basic Information -->
+            <div class="form-section">
+                <h3 class="form-section-title">1. Basic Property Information</h3>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Property Title (English)</label>
+                        <input type="text" name="title_en" value="Modern Luxury Sea-View Apartment" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Property Title (Arabic)</label>
+                        <input type="text" name="title_ar" value="شقة فاخرة بإطلالة بحرية" required class="form-input" dir="rtl">
+                    </div>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Purpose</label>
+                        <select name="purpose" class="form-select" required>
+                            <option value="RENT">For Rent</option>
+                            <option value="BUY">For Sale</option>
+                            <option value="COMMERCIAL">Commercial</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Property Type</label>
+                        <select name="property_type" class="form-select" required>
+                            {% for pt in property_types %}
+                            <option value="{{ pt.id }}">{{ pt.name_en }} ({{ pt.name_ar }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>District / Location</label>
+                        <select name="district" class="form-select" required>
+                            {% for d in districts %}
+                            <option value="{{ d.id }}">{{ d.name_en }} ({{ d.city.name_en }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Pricing & Specifications -->
+            <div class="form-section">
+                <h3 class="form-section-title">2. Pricing & Specifications</h3>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Price</label>
+                        <input type="number" name="price" value="650" step="0.001" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <select name="currency" class="form-select">
+                            <option value="KWD">Kuwaiti Dinar (KWD)</option>
+                            <option value="SAR">Saudi Riyal (SAR)</option>
+                            <option value="AED">UAE Dirham (AED)</option>
+                            <option value="QAR">Qatari Riyal (QAR)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Area (sqm / m²)</label>
+                        <input type="number" name="area_sqm" value="145" required class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Bedrooms</label>
+                        <input type="number" name="bedrooms" value="3" min="0" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Bathrooms</label>
+                        <input type="number" name="bathrooms" value="3" min="1" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Furnishing</label>
+                        <select name="furnishing" class="form-select">
+                            <option value="UNFURNISHED">Unfurnished</option>
+                            <option value="SEMI_FURNISHED">Semi-Furnished</option>
+                            <option value="FULLY_FURNISHED">Fully Furnished</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Interactive Map Pin Picker -->
+            <div class="form-section">
+                <h3 class="form-section-title">3. Geographical Pinpoint (Click on map to position)</h3>
+                <p class="text-dim text-sm" style="margin-bottom: 10px;">Drag or click anywhere on the map to set the exact latitude and longitude.</p>
+                <div id="picker-map" style="height: 280px; border-radius: 8px; margin-bottom: 10px;"></div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="text" name="latitude" id="lat-input" value="29.3759" readonly class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="text" name="longitude" id="lon-input" value="47.9774" readonly class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Description & Submit -->
+            <div class="form-section">
+                <h3 class="form-section-title">4. Overview Description</h3>
+                <div class="form-group">
+                    <label>Description Details</label>
+                    <textarea name="description_en" rows="3" class="form-input" placeholder="Provide full details regarding facilities, view, floor level, parking..."></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <span>🚀 Publish Listing Now</span>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let currentLat = 29.3759;
+    let currentLon = 47.9774;
+
+    const map = L.map('picker-map').setView([currentLat, currentLon], 12);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO &copy; OpenStreetMap'
+    }).addTo(map);
+
+    let marker = L.marker([currentLat, currentLon], { draggable: true }).addTo(map);
+
+    marker.on('dragend', function(e) {
+        const pos = marker.getLatLng();
+        document.getElementById('lat-input').value = pos.lat.toFixed(6);
+        document.getElementById('lon-input').value = pos.lng.toFixed(6);
+    });
+
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        document.getElementById('lat-input').value = e.latlng.lat.toFixed(6);
+        document.getElementById('lon-input').value = e.latlng.lng.toFixed(6);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Search Section -->
+<section class="hero-section">
+    <div class="hero-container">
+        <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span>Enterprise Open-Source PropTech Platform</span>
+        </div>
+        <h1 class="hero-title">
+            Discover Verified Properties Across the GCC & MENA
+        </h1>
+        <p class="hero-subtitle">
+            Instant geo-spatial search, verified broker portfolios, dynamic price clusters, and seamless direct WhatsApp lead routing.
+        </p>
+
+        <!-- Search Card -->
+        <div class="search-card">
+            <!-- Purpose Tabs -->
+            <div class="search-tabs">
+                <button type="button" class="tab-btn active" onclick="setPurpose('RENT')">For Rent</button>
+                <button type="button" class="tab-btn" onclick="setPurpose('BUY')">For Sale</button>
+                <button type="button" class="tab-btn" onclick="setPurpose('COMMERCIAL')">Commercial</button>
+            </div>
+
+            <!-- Search Form -->
+            <form action="{% url 'properties:list' %}" method="GET" class="hero-search-form">
+                <input type="hidden" name="purpose" id="form-purpose" value="RENT">
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Location & District</label>
+                        <select name="district" class="form-select">
+                            <option value="">All Locations (Kuwait / GCC)</option>
+                            {% for d in districts %}
+                            <option value="{{ d.id }}">{{ d.name_en }} ({{ d.city.name_en }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Property Type</label>
+                        <select name="type" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for pt in property_types %}
+                            <option value="{{ pt.slug }}">{{ pt.name_en }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Bedrooms</label>
+                        <select name="bedrooms" class="form-select">
+                            <option value="">Any Beds</option>
+                            <option value="1">1 Bedroom</option>
+                            <option value="2">2 Bedrooms</option>
+                            <option value="3">3 Bedrooms</option>
+                            <option value="4">4 Bedrooms</option>
+                            <option value="5+">5+ Bedrooms</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group search-submit-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-search">
+                            <span>🔍 Search Properties</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- KPI Metrics Strip -->
+        <div class="hero-stats">
+            <div class="stat-item">
+                <span class="stat-val text-emerald">{{ total_listings }}</span>
+                <span class="stat-lbl">Active Properties</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-val text-cyan">{{ total_agencies }}</span>
+                <span class="stat-lbl">Verified Agencies</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-val text-indigo">100%</span>
+                <span class="stat-lbl">Open-Source & Free</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-val text-amber">&lt; 20ms</span>
+                <span class="stat-lbl">Spatial Query Latency</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Properties Showcase -->
+<section class="section-container">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Featured High-Fidelity Listings</h2>
+            <p class="section-sub">Curated luxury residential and commercial developments</p>
+        </div>
+        <a href="{% url 'properties:list' %}?sort=featured" class="btn btn-outline btn-sm">View All Listings →</a>
+    </div>
+
+    <div class="properties-grid">
+        {% for prop in featured_properties %}
+        <div class="property-card">
+            <div class="card-image-wrap">
+                <img src="{{ prop.primary_image_url }}" alt="{{ prop.title_en }}" loading="lazy" class="card-img">
+                <div class="card-badges">
+                    <span class="badge badge-tier">{{ prop.get_tier_display }}</span>
+                    <span class="badge badge-purpose">{{ prop.get_purpose_display }}</span>
+                </div>
+                <div class="card-price-overlay">
+                    {{ prop.price_formatted }}
+                    {% if prop.purpose == 'RENT' %}<small>/ mo</small>{% endif %}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="card-meta-top">
+                    <span class="prop-type">{{ prop.property_type.name_en }}</span>
+                    <span class="prop-ref">#{{ prop.reference_id }}</span>
+                </div>
+                <h3 class="card-title">
+                    <a href="{% url 'properties:detail' prop.slug %}">{{ prop.title_en }}</a>
+                </h3>
+                <p class="card-location">
+                    📍 {{ prop.district.name_en }}, {{ prop.district.city.name_en }}
+                </p>
+
+                <!-- Specs Grid -->
+                <div class="card-specs">
+                    <div class="spec-chip">
+                        <span>🛏️ {{ prop.bedrooms }} Beds</span>
+                    </div>
+                    <div class="spec-chip">
+                        <span>🚿 {{ prop.bathrooms }} Baths</span>
+                    </div>
+                    <div class="spec-chip">
+                        <span>📐 {{ prop.area_sqm|floatformat:0 }} m²</span>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <div class="agent-preview">
+                        {% if prop.agency %}
+                        <img src="{{ prop.agency.logo_url }}" alt="{{ prop.agency.name_en }}" class="agency-mini-logo">
+                        <span class="agency-name">{{ prop.agency.name_en }}</span>
+                        {% else %}
+                        <span class="agency-name">Direct from Landlord</span>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'properties:detail' prop.slug %}" class="btn btn-outline btn-xs">Details →</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No featured listings found. Launch seed data to populate catalog.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Category Pills Section -->
+<section class="section-container">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Browse by Property Type</h2>
+            <p class="section-sub">Explore tailored architectural categories</p>
+        </div>
+    </div>
+
+    <div class="category-grid">
+        {% for pt in property_types %}
+        <a href="{% url 'properties:list' %}?type={{ pt.slug }}" class="category-card">
+            <div class="cat-icon">🏘️</div>
+            <div class="cat-info">
+                <h4>{{ pt.name_en }}</h4>
+                <p>{{ pt.name_ar }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setPurpose(purpose) {
+    document.getElementById('form-purpose').value = purpose;
+    const buttons = document.querySelectorAll('.search-tabs .tab-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

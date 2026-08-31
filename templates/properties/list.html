@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="split-search-layout">
+    <!-- Left: Filter Sidebar -->
+    <aside class="search-sidebar">
+        <div class="sidebar-header">
+            <h3>Refine Search</h3>
+            <a href="{% url 'properties:list' %}" class="btn-link-reset">Reset</a>
+        </div>
+
+        <form action="{% url 'properties:list' %}" method="GET" class="filter-form" id="filter-form">
+            <!-- Keyword Search -->
+            <div class="filter-group">
+                <label>Keyword / Reference ID</label>
+                <input type="text" name="q" value="{{ query }}" placeholder="e.g. Sea view, PST-10492" class="form-input">
+            </div>
+
+            <!-- Purpose -->
+            <div class="filter-group">
+                <label>Purpose</label>
+                <select name="purpose" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Purposes</option>
+                    <option value="RENT" {% if selected_purpose == 'RENT' %}selected{% endif %}>For Rent</option>
+                    <option value="BUY" {% if selected_purpose == 'BUY' %}selected{% endif %}>For Sale</option>
+                    <option value="COMMERCIAL" {% if selected_purpose == 'COMMERCIAL' %}selected{% endif %}>Commercial</option>
+                </select>
+            </div>
+
+            <!-- Property Type -->
+            <div class="filter-group">
+                <label>Property Type</label>
+                <select name="type" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for pt in property_types %}
+                    <option value="{{ pt.slug }}" {% if selected_type == pt.slug %}selected{% endif %}>{{ pt.name_en }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- District / Location -->
+            <div class="filter-group">
+                <label>Neighborhood / District</label>
+                <select name="district" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Locations</option>
+                    {% for d in districts %}
+                    <option value="{{ d.id }}" {% if selected_district|stringformat:"s" == d.id|stringformat:"s" %}selected{% endif %}>
+                        {{ d.name_en }} ({{ d.city.name_en }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Price Range -->
+            <div class="filter-group">
+                <label>Price Range</label>
+                <div class="price-inputs">
+                    <input type="number" name="min_price" value="{{ selected_min_price }}" placeholder="Min" class="form-input">
+                    <span class="price-sep">-</span>
+                    <input type="number" name="max_price" value="{{ selected_max_price }}" placeholder="Max" class="form-input">
+                </div>
+            </div>
+
+            <!-- Bedrooms -->
+            <div class="filter-group">
+                <label>Bedrooms</label>
+                <select name="bedrooms" class="form-select" onchange="this.form.submit()">
+                    <option value="">Any Beds</option>
+                    <option value="1" {% if selected_bedrooms == '1' %}selected{% endif %}>1 Bedroom</option>
+                    <option value="2" {% if selected_bedrooms == '2' %}selected{% endif %}>2 Bedrooms</option>
+                    <option value="3" {% if selected_bedrooms == '3' %}selected{% endif %}>3 Bedrooms</option>
+                    <option value="4" {% if selected_bedrooms == '4' %}selected{% endif %}>4 Bedrooms</option>
+                    <option value="5+" {% if selected_bedrooms == '5+' %}selected{% endif %}>5+ Bedrooms</option>
+                </select>
+            </div>
+
+            <!-- Sort By -->
+            <input type="hidden" name="sort" id="input-sort" value="{{ selected_sort }}">
+
+            <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+        </form>
+    </aside>
+
+    <!-- Center: Listings Feed -->
+    <section class="listings-workspace">
+        <div class="workspace-header">
+            <div>
+                <h2 class="workspace-title">{{ total_count }} Properties Found</h2>
+                <p class="workspace-sub">Real-time geo-located inventory</p>
+            </div>
+            <div class="sort-box">
+                <label>Sort:</label>
+                <select class="form-select form-select-sm" onchange="applySort(this.value)">
+                    <option value="featured" {% if selected_sort == 'featured' %}selected{% endif %}>Featured First</option>
+                    <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="area_desc" {% if selected_sort == 'area_desc' %}selected{% endif %}>Area: Largest First</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="listings-scroll-area">
+            <div class="listings-column">
+                {% for prop in page_obj %}
+                <div class="property-row-card" onmouseenter="highlightMarker({{ prop.id }})" onmouseleave="resetMarker({{ prop.id }})">
+                    <div class="row-image-wrap">
+                        <img src="{{ prop.primary_image_url }}" alt="{{ prop.title_en }}" loading="lazy" class="row-img">
+                        <span class="badge badge-purpose">{{ prop.get_purpose_display }}</span>
+                    </div>
+
+                    <div class="row-content">
+                        <div class="row-header">
+                            <span class="prop-type">{{ prop.property_type.name_en }}</span>
+                            <span class="price-tag">{{ prop.price_formatted }}</span>
+                        </div>
+                        <h3 class="row-title">
+                            <a href="{% url 'properties:detail' prop.slug %}">{{ prop.title_en }}</a>
+                        </h3>
+                        <p class="row-location">
+                            📍 {{ prop.district.name_en }}, {{ prop.district.city.name_en }}
+                        </p>
+                        <div class="row-specs">
+                            <span>🛏️ {{ prop.bedrooms }} Beds</span>
+                            <span>🚿 {{ prop.bathrooms }} Baths</span>
+                            <span>📐 {{ prop.area_sqm|floatformat:0 }} m²</span>
+                        </div>
+                        <div class="row-footer">
+                            <span class="ref-id">Ref: {{ prop.reference_id }}</span>
+                            <a href="{% url 'properties:detail' prop.slug %}" class="btn btn-outline btn-xs">View Details →</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <h3>No matching properties found</h3>
+                    <p>Try broadening your filters or resetting search parameters.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&purpose={{ selected_purpose }}&type={{ selected_type }}&district={{ selected_district }}&sort={{ selected_sort }}" class="page-link">← Previous</a>
+                {% endif %}
+                <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&purpose={{ selected_purpose }}&type={{ selected_type }}&district={{ selected_district }}&sort={{ selected_sort }}" class="page-link">Next →</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Right: Interactive Leaflet Map -->
+    <section class="map-workspace">
+        <div id="interactive-map" class="interactive-map"></div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function applySort(sortVal) {
+    document.getElementById('input-sort').value = sortVal;
+    document.getElementById('filter-form').submit();
+}
+
+// Initialize Leaflet Map
+let map;
+let markersMap = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Center at Kuwait City / Regional Center
+    map = L.map('interactive-map').setView([29.3759, 47.9774], 11);
+
+    // Dark sleek CartoDB / OSM tiles
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Fetch GeoJSON Map Pins from REST API
+    fetch('/api/v1/properties/map/')
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.features) {
+                const group = [];
+                data.features.forEach(feat => {
+                    const coords = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
+                    const props = feat.properties;
+
+                    // Custom HTML Price Badge Marker
+                    const priceIcon = L.divIcon({
+                        className: 'custom-price-pin',
+                        html: `<div class="pin-badge" id="pin-${props.id}"><span>${props.price_display}</span></div>`,
+                        iconSize: [80, 30],
+                        iconAnchor: [40, 15]
+                    });
+
+                    const marker = L.marker(coords, { icon: priceIcon }).addTo(map);
+                    markersMap[props.id] = marker;
+                    group.push(coords);
+
+                    // Popup on click
+                    marker.bindPopup(`
+                        <div class="map-popup-card">
+                            <img src="${props.image_url}" class="popup-img" alt="${props.title}">
+                            <div class="popup-body">
+                                <strong>${props.price_display}</strong>
+                                <p class="popup-title">${props.title}</p>
+                                <p class="popup-meta">🛏️ ${props.bedrooms} Beds • 📐 ${props.area_sqm} m²</p>
+                                <a href="${props.detail_url}" class="popup-btn">View Listing →</a>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                if (group.length > 0) {
+                    map.fitBounds(L.latLngBounds(group).pad(0.1));
+                }
+            }
+        });
+});
+
+function highlightMarker(id) {
+    const pin = document.getElementById(`pin-${id}`);
+    if (pin) pin.classList.add('pin-highlight');
+}
+
+function resetMarker(id) {
+    const pin = document.getElementById(`pin-${id}`);
+    if (pin) pin.classList.remove('pin-highlight');
+}
+</script>
+{% endblock %}

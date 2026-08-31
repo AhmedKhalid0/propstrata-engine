@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Agency Hero Profile -->
+    <div class="agency-profile-hero">
+        <img src="{{ agency.logo_url }}" alt="{{ agency.name_en }}" class="agency-hero-logo">
+        <div class="agency-hero-info">
+            <span class="badge badge-tier">⭐ {{ agency.rating }} Verified Broker Agency</span>
+            <h1>{{ agency.name_en }}</h1>
+            <h2 class="text-dim text-sm">{{ agency.name_ar }}</h2>
+            <p class="agency-hero-desc">{{ agency.description_en }}</p>
+            <div class="agency-contact-chips">
+                <span>📞 {{ agency.phone }}</span>
+                <span>💬 WhatsApp: {{ agency.whatsapp }}</span>
+                {% if agency.website %}<span>🌐 <a href="{{ agency.website }}" target="_blank">{{ agency.website }}</a></span>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Property Inventory -->
+    <div class="section-header" style="margin-top: 32px;">
+        <div>
+            <h2 class="section-title">Active Property Portfolio ({{ properties.count }})</h2>
+            <p class="section-sub">Verified real estate managed by {{ agency.name_en }}</p>
+        </div>
+    </div>
+
+    <div class="properties-grid">
+        {% for prop in properties %}
+        <div class="property-card">
+            <div class="card-image-wrap">
+                <img src="{{ prop.primary_image_url }}" alt="{{ prop.title_en }}" class="card-img">
+                <span class="badge badge-purpose">{{ prop.get_purpose_display }}</span>
+                <div class="card-price-overlay">{{ prop.price_formatted }}</div>
+            </div>
+            <div class="card-body">
+                <span class="prop-type">{{ prop.property_type.name_en }}</span>
+                <h3 class="card-title">
+                    <a href="{% url 'properties:detail' prop.slug %}">{{ prop.title_en }}</a>
+                </h3>
+                <p class="card-location">📍 {{ prop.district.name_en }}</p>
+                <div class="card-specs">
+                    <span>🛏️ {{ prop.bedrooms }} Beds</span>
+                    <span>🚿 {{ prop.bathrooms }} Baths</span>
+                    <span>📐 {{ prop.area_sqm|floatformat:0 }} m²</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No active properties currently listed under this agency.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

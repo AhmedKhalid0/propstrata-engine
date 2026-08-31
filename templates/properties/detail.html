@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="property-detail-page">
+    <!-- Breadcrumb & Top Bar -->
+    <div class="detail-top-bar">
+        <div class="breadcrumbs">
+            <a href="{% url 'properties:home' %}">Home</a> /
+            <a href="{% url 'properties:list' %}">Properties</a> /
+            <a href="{% url 'properties:list' %}?district={{ property.district.id }}">{{ property.district.name_en }}</a> /
+            <span>{{ property.reference_id }}</span>
+        </div>
+        <div class="detail-actions">
+            <span class="ref-badge">Ref: {{ property.reference_id }}</span>
+            <span class="badge badge-tier">{{ property.get_tier_display }}</span>
+        </div>
+    </div>
+
+    <!-- Main Detail Grid -->
+    <div class="detail-grid">
+        <!-- Left Column: Media Gallery, Specs, Description & Location -->
+        <div class="detail-main-col">
+            <!-- Gallery Hero -->
+            <div class="gallery-container">
+                <div class="gallery-primary">
+                    <img id="primary-gallery-img" src="{{ property.primary_image_url }}" alt="{{ property.title_en }}">
+                    <div class="gallery-price-tag">
+                        {{ property.price_formatted }}
+                        {% if property.purpose == 'RENT' %}<small>/ month</small>{% endif %}
+                    </div>
+                </div>
+
+                {% if property.images.all|length > 1 %}
+                <div class="gallery-thumbs">
+                    {% for img in property.images.all %}
+                    <img src="{{ img.image_url }}" class="thumb-img {% if forloop.first %}active{% endif %}" onclick="changeGalleryImage(this.src)" alt="Property photo">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Title & Summary Header -->
+            <div class="detail-card">
+                <div class="title-row">
+                    <div>
+                        <span class="prop-type-pill">{{ property.property_type.name_en }} • {{ property.get_purpose_display }}</span>
+                        <h1 class="detail-title">{{ property.title_en }}</h1>
+                        <h2 class="detail-title-ar">{{ property.title_ar }}</h2>
+                        <p class="detail-address">📍 {{ property.district.name_en }}, {{ property.district.city.name_en }}</p>
+                    </div>
+                </div>
+
+                <!-- Key Specifications Matrix -->
+                <div class="specs-matrix">
+                    <div class="matrix-item">
+                        <span class="matrix-label">Area</span>
+                        <strong class="matrix-val">📐 {{ property.area_sqm|floatformat:0 }} m²</strong>
+                    </div>
+                    <div class="matrix-item">
+                        <span class="matrix-label">Bedrooms</span>
+                        <strong class="matrix-val">🛏️ {{ property.bedrooms }} Beds ({{ property.master_bedrooms }} Master)</strong>
+                    </div>
+                    <div class="matrix-item">
+                        <span class="matrix-label">Bathrooms</span>
+                        <strong class="matrix-val">🚿 {{ property.bathrooms }} Baths</strong>
+                    </div>
+                    <div class="matrix-item">
+                        <span class="matrix-label">Furnishing</span>
+                        <strong class="matrix-val">🛋️ {{ property.get_furnishing_display }}</strong>
+                    </div>
+                    <div class="matrix-item">
+                        <span class="matrix-label">Parking</span>
+                        <strong class="matrix-val">🚗 {{ property.parking_spaces }} Spaces</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="detail-card">
+                <h3 class="card-heading">Property Overview & Description</h3>
+                <div class="description-body">
+                    {% if property.description_en %}
+                    <p>{{ property.description_en|linebreaks }}</p>
+                    {% endif %}
+                    {% if property.description_ar %}
+                    <div class="desc-ar" dir="rtl">
+                        <p>{{ property.description_ar|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Amenities -->
+            {% if property.amenities.all %}
+            <div class="detail-card">
+                <h3 class="card-heading">Features & Amenities</h3>
+                <div class="amenities-grid">
+                    {% for am in property.amenities.all %}
+                    <div class="amenity-chip">
+                        <span>✨ {{ am.name_en }} ({{ am.name_ar }})</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Location Map -->
+            <div class="detail-card">
+                <h3 class="card-heading">Location & Neighborhood</h3>
+                <p class="text-dim text-sm" style="margin-bottom: 12px;">Precise geographical coordinates for {{ property.district.name_en }}</p>
+                <div id="property-pin-map" class="property-pin-map" style="height: 320px; border-radius: 8px;"></div>
+            </div>
+        </div>
+
+        <!-- Right Column: Agent / Broker Lead Contact Card -->
+        <aside class="detail-sidebar-col">
+            <div class="sticky-contact-card">
+                <div class="contact-header">
+                    {% if property.agent %}
+                    <img src="{{ property.agent.avatar_url }}" alt="{{ property.agent.name_en }}" class="agent-avatar">
+                    <div class="agent-info">
+                        <h4>{{ property.agent.name_en }}</h4>
+                        <span class="agent-title">{{ property.agent.title_en }}</span>
+                        <span class="badge badge-tier">⭐ {{ property.agent.rating }} Rating</span>
+                    </div>
+                    {% elif property.agency %}
+                    <img src="{{ property.agency.logo_url }}" alt="{{ property.agency.name_en }}" class="agent-avatar">
+                    <div class="agent-info">
+                        <h4>{{ property.agency.name_en }}</h4>
+                        <span class="agent-title">Verified Agency</span>
+                        <span class="badge badge-tier">⭐ {{ property.agency.rating }} Rating</span>
+                    </div>
+                    {% else %}
+                    <div class="logo-gem">🏢</div>
+                    <div class="agent-info">
+                        <h4>Direct Landlord Listing</h4>
+                        <span class="agent-title">Verified Property Owner</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="contact-pricing">
+                    <span class="price-val">{{ property.price_formatted }}</span>
+                    {% if property.purpose == 'RENT' %}<span class="price-cycle">per month</span>{% endif %}
+                </div>
+
+                <!-- Instant Lead Action Buttons -->
+                <div class="contact-actions">
+                    <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-whatsapp btn-block" onclick="trackLead('whatsapp')">
+                        <span>💬 Chat on WhatsApp</span>
+                    </a>
+                    <a href="tel:{% if property.agent %}{{ property.agent.phone }}{% else %}{{ property.agency.phone|default:'+96522000000' }}{% endif %}" class="btn btn-primary btn-block" onclick="trackLead('call')">
+                        <span>📞 Call Agent</span>
+                    </a>
+                </div>
+
+                <!-- Quick Inquiry Form -->
+                <form id="lead-inquiry-form" class="inquiry-form" onsubmit="submitInquiry(event)">
+                    <input type="hidden" name="property" value="{{ property.id }}">
+                    <h4>Request a Viewing / Callback</h4>
+                    <div class="form-group">
+                        <input type="text" name="name" id="lead-name" placeholder="Your Full Name" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" name="phone" id="lead-phone" placeholder="Phone / WhatsApp Number" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <textarea name="message" id="lead-msg" rows="2" placeholder="I am interested in this property..." class="form-input"></textarea>
+                    </div>
+                    <button type="submit" id="btn-inquire-submit" class="btn btn-outline btn-block">Send Inquiry</button>
+                    <div id="inquiry-feedback" style="display:none; font-size:12px; margin-top:8px;" class="text-emerald"></div>
+                </form>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changeGalleryImage(src) {
+    document.getElementById('primary-gallery-img').src = src;
+    document.querySelectorAll('.thumb-img').forEach(img => img.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+// Single Property Pin Map
+document.addEventListener('DOMContentLoaded', () => {
+    const lat = {{ property.latitude|default:29.3759 }};
+    const lon = {{ property.longitude|default:47.9774 }};
+
+    const map = L.map('property-pin-map').setView([lat, lon], 14);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO &copy; OpenStreetMap'
+    }).addTo(map);
+
+    const priceIcon = L.divIcon({
+        className: 'custom-price-pin',
+        html: `<div class="pin-badge pin-highlight"><span>{{ property.price_formatted }}</span></div>`,
+        iconSize: [90, 32],
+        iconAnchor: [45, 16]
+    });
+
+    L.marker([lat, lon], { icon: priceIcon }).addTo(map)
+        .bindPopup("<strong>{{ property.title_en }}</strong><br>{{ property.district.name_en }}")
+        .openPopup();
+});
+
+function trackLead(type) {
+    fetch('/api/v1/properties/{{ property.id }}/track_click/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: type })
+    }).catch(e => console.log(e));
+}
+
+function submitInquiry(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-inquire-submit');
+    const feedback = document.getElementById('inquiry-feedback');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    const payload = {
+        property: {{ property.id }},
+        name: document.getElementById('lead-name').value,
+        phone: document.getElementById('lead-phone').value,
+        message: document.getElementById('lead-msg').value,
+        source: 'FORM'
+    };
+
+    fetch('/api/v1/leads/inquiries/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        feedback.style.display = 'block';
+        feedback.textContent = '✅ Inquiry submitted successfully! The agent will contact you shortly.';
+        btn.textContent = 'Sent';
+    })
+    .catch(err => {
+        alert('Failed to send inquiry: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Send Inquiry';
+    });
+}
+</script>
+{% endblock %}
