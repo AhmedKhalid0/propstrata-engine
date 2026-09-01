@@ -65,3 +65,15 @@ class TestPropertyAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["reference_id"], self.prop1.reference_id)
         self.assertEqual(res.data["views_count"], 1)  # Incremented views
+
+    def test_compare_properties_api(self):
+        res = self.client.get(f"/api/v1/properties/compare/?ids={self.prop1.id},{self.prop2.id}")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["count"], 2)
+        self.assertEqual(len(res.data["properties"]), 2)
+
+    def test_compare_web_view(self):
+        res = self.client.get(f"/compare/?ids={self.prop1.id},{self.prop2.id}")
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Beachside Apartment")
+        self.assertContains(res, "Grand Villa For Sale")

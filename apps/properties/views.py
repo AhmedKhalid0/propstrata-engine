@@ -158,6 +158,25 @@ class PropertyViewSet(viewsets.ModelViewSet):
         serializer = PropertyListSerializer(featured_qs, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["get"])
+    def compare(self, request):
+        """Compares up to 4 properties side-by-side."""
+        raw_ids = request.query_params.get("ids", "")
+        if not raw_ids:
+            return Response({"error": "No property IDs specified in 'ids' parameter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ids = [int(i.strip()) for i in raw_ids.split(",") if i.strip().isdigit()][:4]
+        except ValueError:
+            return Response({"error": "Invalid property IDs format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        properties = self.get_queryset().filter(id__in=ids)
+        serializer = PropertyDetailSerializer(properties, many=True)
+        return Response({
+            "count": len(serializer.data),
+            "properties": serializer.data,
+        })
+
     @action(detail=True, methods=["post"])
     def track_click(self, request, pk=None):
         """Tracks user conversion clicks (WhatsApp or Phone call)."""

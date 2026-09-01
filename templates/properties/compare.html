@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Comparison Studio Header -->
+    <div class="section-header">
+        <div>
+            <span class="badge badge-tier">PropTech Decision Matrix</span>
+            <h1 class="section-title">Property Comparison Studio</h1>
+            <p class="section-sub">Analyze specifications, unit pricing, architectural features, and rental yields side-by-side</p>
+        </div>
+        <div class="compare-selector-box">
+            <label>Add Property to Compare:</label>
+            <select class="form-select form-select-sm" onchange="addPropertyToCompare(this.value)">
+                <option value="">-- Choose Property --</option>
+                {% for p in all_properties %}
+                <option value="{{ p.id }}">{{ p.title_en }} ({{ p.price_formatted }})</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if selected_properties %}
+    <div class="comparison-table-wrapper">
+        <table class="comparison-table">
+            <thead>
+                <!-- Row 1: Property Images, Titles & Remove Action -->
+                <tr>
+                    <th class="matrix-th-label">Property Overview</th>
+                    {% for prop in selected_properties %}
+                    <th class="matrix-th-item">
+                        <div class="compare-card-head">
+                            <button type="button" class="btn-remove-col" onclick="removePropertyFromCompare({{ prop.id }})" title="Remove from comparison">✕</button>
+                            <img src="{{ prop.primary_image_url }}" alt="{{ prop.title_en }}" class="compare-img">
+                            <span class="badge badge-purpose" style="margin-top: 8px;">{{ prop.get_purpose_display }}</span>
+                            <h3 class="compare-title">
+                                <a href="{% url 'properties:detail' prop.slug %}">{{ prop.title_en }}</a>
+                            </h3>
+                            <span class="compare-price">{{ prop.price_formatted }}</span>
+                            <a href="{% url 'properties:detail' prop.slug %}" class="btn btn-outline btn-xs" style="margin-top: 6px;">View Full Details →</a>
+                        </div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Section: Financials & Economics -->
+                <tr class="section-divider-row">
+                    <td colspan="{{ selected_properties|length|add:1 }}">💰 Pricing & Economics</td>
+                </tr>
+                <tr>
+                    <td class="row-label">Listing Reference</td>
+                    {% for prop in selected_properties %}
+                    <td><code class="ref-badge">{{ prop.reference_id }}</code></td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Price per m²</td>
+                    {% for prop in selected_properties %}
+                    <td><strong>{{ prop.price_per_sqm|floatformat:1 }} {{ prop.currency }} / m²</strong></td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Listing Tier</td>
+                    {% for prop in selected_properties %}
+                    <td><span class="badge badge-tier">{{ prop.get_tier_display }}</span></td>
+                    {% endfor %}
+                </tr>
+
+                <!-- Section: Dimensions & Specifications -->
+                <tr class="section-divider-row">
+                    <td colspan="{{ selected_properties|length|add:1 }}">📐 Dimensions & Spatial Specs</td>
+                </tr>
+                <tr>
+                    <td class="row-label">Gross Area</td>
+                    {% for prop in selected_properties %}
+                    <td><strong>{{ prop.area_sqm|floatformat:0 }} m²</strong></td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Bedrooms</td>
+                    {% for prop in selected_properties %}
+                    <td>{{ prop.bedrooms }} Bedrooms ({{ prop.master_bedrooms }} Master)</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Bathrooms</td>
+                    {% for prop in selected_properties %}
+                    <td>{{ prop.bathrooms }} Bathrooms</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Parking Spaces</td>
+                    {% for prop in selected_properties %}
+                    <td>🚗 {{ prop.parking_spaces }} Allocated Slots</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Furnishing Status</td>
+                    {% for prop in selected_properties %}
+                    <td>{{ prop.get_furnishing_display }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Location</td>
+                    {% for prop in selected_properties %}
+                    <td>📍 {{ prop.district.name_en }}, {{ prop.district.city.name_en }}</td>
+                    {% endfor %}
+                </tr>
+
+                <!-- Section: Amenities Matrix -->
+                <tr class="section-divider-row">
+                    <td colspan="{{ selected_properties|length|add:1 }}">✨ Amenities & Features Checklist</td>
+                </tr>
+                {% for am in all_amenities %}
+                <tr>
+                    <td class="row-label">{{ am.name_en }}</td>
+                    {% for prop in selected_properties %}
+                    <td class="check-cell">
+                        {% if am.id in prop.amenity_ids %}
+                        <span class="check-yes">✅ Included</span>
+                        {% else %}
+                        <span class="check-no">—</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+
+                <!-- Section: Broker & Contact -->
+                <tr class="section-divider-row">
+                    <td colspan="{{ selected_properties|length|add:1 }}">📞 Agency & Instant Contact</td>
+                </tr>
+                <tr>
+                    <td class="row-label">Managing Broker</td>
+                    {% for prop in selected_properties %}
+                    <td>
+                        {% if prop.agency %}
+                        <span class="text-cyan font-bold">{{ prop.agency.name_en }}</span>
+                        {% else %}
+                        <span class="text-dim">Direct Landlord</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="row-label">Lead Action</td>
+                    {% for prop in selected_properties %}
+                    <td>
+                        <a href="https://wa.me/{{ prop.agency.whatsapp|default:'96590000000'|cut:'+'|cut:' '|cut:'-' }}?text=Hello%2C%20I%20am%20inquiring%20about%20{{ prop.reference_id }}%20({{ prop.title_en }})" target="_blank" class="btn btn-whatsapp btn-sm btn-block">
+                            <span>💬 WhatsApp</span>
+                        </a>
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>No properties selected for comparison</h3>
+        <p>Choose up to 4 listings to evaluate their specifications side-by-side.</p>
+        <a href="{% url 'properties:list' %}" class="btn btn-primary" style="margin-top: 14px;">Browse Catalog →</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getActiveIds() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ids = urlParams.get('ids');
+    if (!ids) {
+        return [{% for p in selected_properties %}{{ p.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
+    }
+    return ids.split(',').map(i => parseInt(i.trim())).filter(i => !isNaN(i));
+}
+
+function addPropertyToCompare(propId) {
+    if (!propId) return;
+    const current = getActiveIds();
+    if (!current.includes(parseInt(propId))) {
+        if (current.length >= 4) {
+            alert('You can compare a maximum of 4 properties at a time.');
+            return;
+        }
+        current.push(parseInt(propId));
+        window.location.href = `/compare/?ids=${current.join(',')}`;
+    }
+}
+
+function removePropertyFromCompare(propId) {
+    const current = getActiveIds().filter(i => i !== propId);
+    if (current.length === 0) {
+        window.location.href = '/compare/';
+    } else {
+        window.location.href = `/compare/?ids=${current.join(',')}`;
+    }
+}
+</script>
+{% endblock %}

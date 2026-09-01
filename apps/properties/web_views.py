@@ -225,3 +225,45 @@ def add_property_view(request):
             "page_title": "List Your Property | PropStrata Listing Wizard",
         },
     )
+
+
+def property_compare_view(request):
+    """Interactive Property Comparison Studio comparing up to 4 listings side-by-side."""
+    raw_ids = request.GET.get("ids", "")
+    all_properties = Property.objects.filter(status="ACTIVE").select_related("property_type", "district")
+
+    if raw_ids:
+        try:
+            ids = [int(i.strip()) for i in raw_ids.split(",") if i.strip().isdigit()][:4]
+            selected_properties = list(
+                Property.objects.filter(id__in=ids)
+                .select_related("property_type", "district__city__governorate__country", "agency", "agent")
+                .prefetch_related("images", "amenities")
+            )
+        except ValueError:
+            selected_properties = list(all_properties[:3])
+    else:
+        # Default showcase of 3 properties
+        selected_properties = list(
+            Property.objects.filter(status="ACTIVE")
+            .select_related("property_type", "district__city__governorate__country", "agency", "agent")
+            .prefetch_related("images", "amenities")[:3]
+        )
+
+    # Compute comparative attributes
+    for p in selected_properties:
+        p.price_per_sqm = (float(p.price) / float(p.area_sqm)) if p.area_sqm > 0 else 0
+        p.amenity_ids = set(p.amenities.values_list("id", flat=True))
+
+    all_amenities = Amenity.objects.all()
+
+    return render(
+        request,
+        "properties/compare.html",
+        {
+            "selected_properties": selected_properties,
+            "all_properties": all_properties,
+            "all_amenities": all_amenities,
+            "page_title": "Property Comparison Studio | PropStrata",
+        },
+    )

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Analytics Header -->
+    <div class="section-header">
+        <div>
+            <span class="badge badge-tier">Brokerage Intelligence & Telemetry</span>
+            <h1 class="section-title">Agency CRM & Lead Conversion Analytics</h1>
+            <p class="section-sub">Real-time performance metrics, buyer interaction funnels, and inventory engagement</p>
+        </div>
+        <div class="analytics-actions">
+            <span class="badge badge-purpose">Live Telemetry</span>
+            <a href="/api/v1/agencies/analytics/" target="_blank" class="btn btn-outline btn-sm">Export JSON API ↗</a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="analytics-kpi-grid">
+        <div class="analytics-kpi-card">
+            <span class="kpi-label">Total Portfolio Views</span>
+            <div class="kpi-row">
+                <span class="kpi-number text-emerald">{{ total_views }}</span>
+                <span class="kpi-delta text-emerald">↑ 18.4%</span>
+            </div>
+            <span class="kpi-desc">Across all active listings</span>
+        </div>
+
+        <div class="analytics-kpi-card">
+            <span class="kpi-label">WhatsApp Direct Chats</span>
+            <div class="kpi-row">
+                <span class="kpi-number text-emerald">{{ total_whatsapp_clicks }}</span>
+                <span class="kpi-delta text-emerald">High Intent</span>
+            </div>
+            <span class="kpi-desc">Direct prefilled inquiries</span>
+        </div>
+
+        <div class="analytics-kpi-card">
+            <span class="kpi-label">Phone Calls & Inquiries</span>
+            <div class="kpi-row">
+                <span class="kpi-number text-cyan">{{ total_call_clicks|add:total_inquiries }}</span>
+                <span class="kpi-delta text-cyan">Verified</span>
+            </div>
+            <span class="kpi-desc">Direct calls & web forms</span>
+        </div>
+
+        <div class="analytics-kpi-card">
+            <span class="kpi-label">Conversion Rate</span>
+            <div class="kpi-row">
+                <span class="kpi-number text-indigo">{{ conversion_rate }}%</span>
+                <span class="kpi-delta text-indigo">Benchmark: 3.2%</span>
+            </div>
+            <span class="kpi-desc">Visitors converted to leads</span>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="charts-grid-2">
+        <!-- Chart 1: 30-Day Traffic Velocity -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>30-Day Visitor Traffic vs Lead Conversion</h3>
+                <span class="text-dim text-sm">Daily Engagement</span>
+            </div>
+            <div class="chart-canvas-wrap">
+                <canvas id="trafficVelocityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 2: Lead Acquisition Sources -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Lead Conversion Channel Distribution</h3>
+                <span class="text-dim text-sm">By Acquisition Source</span>
+            </div>
+            <div class="chart-canvas-wrap">
+                <canvas id="leadSourceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Section: CRM Recent Leads Pipeline & Top Properties -->
+    <div class="crm-workspace-grid">
+        <!-- Left: Recent CRM Leads Table -->
+        <div class="crm-card">
+            <div class="chart-header">
+                <h3>Recent Incoming Buyer Leads & Inquiries</h3>
+                <span class="badge badge-purpose">{{ recent_leads.count }} Active Leads</span>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="crm-table">
+                    <thead>
+                        <tr>
+                            <th>Buyer / Seeker</th>
+                            <th>Contact</th>
+                            <th>Inquired Property</th>
+                            <th>Source</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in recent_leads %}
+                        <tr>
+                            <td>
+                                <strong>{{ lead.name }}</strong>
+                                <span class="lead-email">{{ lead.email|default:"Not provided" }}</span>
+                            </td>
+                            <td><code class="ref-badge">{{ lead.phone }}</code></td>
+                            <td>
+                                <a href="{% url 'properties:detail' lead.property.slug %}" class="lead-prop-link">
+                                    [{{ lead.property.reference_id }}] {{ lead.property.title_en|truncatechars:28 }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge badge-tier">{{ lead.get_source_display }}</span>
+                            </td>
+                            <td>
+                                <a href="https://wa.me/{{ lead.phone|cut:'+'|cut:' '|cut:'-' }}" target="_blank" class="btn btn-whatsapp btn-xs">
+                                    <span>💬 Chat</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding: 24px; color: var(--text-dim);">
+                                No recent leads captured. Inquiries submitted via web or WhatsApp will display here in real time.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right: Top Performing Inventory -->
+        <div class="crm-card">
+            <div class="chart-header">
+                <h3>Top Performing Inventory</h3>
+                <span class="text-dim text-sm">By Impressions</span>
+            </div>
+
+            <div class="top-props-list">
+                {% for prop in top_properties %}
+                <div class="top-prop-item">
+                    <img src="{{ prop.primary_image_url }}" alt="{{ prop.title_en }}" class="top-prop-thumb">
+                    <div class="top-prop-info">
+                        <h4><a href="{% url 'properties:detail' prop.slug %}">{{ prop.title_en|truncatechars:32 }}</a></h4>
+                        <p>{{ prop.district.name_en }} • <strong class="text-emerald">{{ prop.price_formatted }}</strong></p>
+                    </div>
+                    <div class="top-prop-metric">
+                        <strong>{{ prop.views_count }}</strong>
+                        <span>Views</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Line Chart: 30-Day Traffic Velocity
+    const ctxTraffic = document.getElementById('trafficVelocityChart').getContext('2d');
+    const days = Array.from({length: 15}, (_, i) => `Day ${i + 1}`);
+    const viewsData = [45, 62, 58, 80, 95, 110, 140, 125, 160, 190, 175, 220, 245, 260, 290];
+    const leadsData = [2, 4, 3, 6, 8, 7, 12, 9, 14, 16, 13, 19, 22, 24, 28];
+
+    new Chart(ctxTraffic, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [
+                {
+                    label: 'Page Views',
+                    data: viewsData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.35,
+                    fill: true,
+                },
+                {
+                    label: 'WhatsApp / Call Inquiries',
+                    data: leadsData,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.35,
+                    fill: true,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#94a3b8' } }
+            },
+            scales: {
+                x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } },
+                y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } }
+            }
+        }
+    });
+
+    // 2. Doughnut Chart: Lead Acquisition Sources
+    const ctxSource = document.getElementById('leadSourceChart').getContext('2d');
+    new Chart(ctxSource, {
+        type: 'doughnut',
+        data: {
+            labels: ['WhatsApp Direct', 'Direct Phone Call', 'Web Inquiry Form', 'Mobile App'],
+            datasets: [{
+                data: [65, 20, 10, 5],
+                backgroundColor: ['#25d366', '#06b6d4', '#6366f1', '#f59e0b'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

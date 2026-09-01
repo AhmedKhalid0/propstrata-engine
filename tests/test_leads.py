@@ -57,3 +57,14 @@ class TestLeadsAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.prop.refresh_from_db()
         self.assertEqual(self.prop.whatsapp_clicks, 1)
+
+    def test_agency_analytics_api_endpoint(self):
+        res = self.client.get("/api/v1/agencies/analytics/")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("total_views", res.data)
+        self.assertIn("total_whatsapp_clicks", res.data)
+
+    def test_agency_analytics_web_view(self):
+        res = self.client.get("/agencies/analytics/")
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Agency CRM & Lead Conversion Analytics")
